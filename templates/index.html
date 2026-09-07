@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaatriCare AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            🏥 MaatriCare AI
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active" data-view="dashboard-view">Dashboard</li>
+            <li class="nav-item" data-view="patients-view">Patients</li>
+            <li class="nav-item" data-view="escalations-view">Escalations</li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <!-- Dashboard View -->
+        <section id="dashboard-view" class="view-section active">
+            <h1 class="mb-3">Dashboard</h1>
+            <div class="flex-between mb-3">
+                <p>Welcome to MaatriCare AI Medical Officer Dashboard</p>
+                <button class="btn" onclick="openModal('register-patient-modal')">Register New Patient</button>
+            </div>
+
+            <div class="stat-grid">
+                <div class="card stat-card">
+                    <div class="stat-icon">👩</div>
+                    <div class="stat-info">
+                        <h3>Total Patients</h3>
+                        <p id="dash-total-patients">-</p>
+                    </div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-icon">🤰</div>
+                    <div class="stat-info">
+                        <h3>Active Pregnancies</h3>
+                        <p id="dash-active-pregnancies">-</p>
+                    </div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-icon">🚨</div>
+                    <div class="stat-info">
+                        <h3>Pending Escalations</h3>
+                        <p id="dash-pending-escalations">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Recent Activity</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Patient Name</th>
+                                <th>Risk Tier</th>
+                                <th>Systolic BP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dash-recent-visits">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Patients View -->
+        <section id="patients-view" class="view-section">
+            
+            <!-- Step A: Patient List -->
+            <div id="patient-list-step">
+                <div class="flex-between mb-3">
+                    <h1>Patients</h1>
+                    <button class="btn" onclick="openModal('register-patient-modal')">Register New Patient</button>
+                </div>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Village</th>
+                                <th>Phone</th>
+                                <th>Date of Birth</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patients-table-body">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Step B: Patient Detail -->
+            <div id="patient-detail-step" class="d-none">
+                <div class="mb-3">
+                    <button class="btn btn-small" onclick="showPatientStep('patient-list-step')">&larr; Back to Patients</button>
+                </div>
+                <div class="card">
+                    <h2 id="pd-name">Patient Name</h2>
+                    <p id="pd-info">Patient Info</p>
+                </div>
+                <div class="flex-between mb-3 mt-3">
+                    <h3>Pregnancies</h3>
+                    <button class="btn btn-small" onclick="openModal('start-pregnancy-modal')">Start New Pregnancy</button>
+                </div>
+                <div class="card">
+                    <div id="pd-pregnancies-list">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step C: Pregnancy Detail -->
+            <div id="pregnancy-detail-step" class="d-none">
+                <div class="mb-3">
+                    <button class="btn btn-small" onclick="showPatientStep('patient-detail-step')">&larr; Back to Patient Details</button>
+                </div>
+                <div class="card flex-between">
+                    <div>
+                        <h2 class="mb-3">Pregnancy Overview</h2>
+                        <p id="preg-info">LMP: - | EDD: - | Gestational Age: -</p>
+                    </div>
+                    <div>
+                        <span id="preg-risk-badge" class="badge badge-green badge-large">GREEN</span>
+                    </div>
+                </div>
+                
+                <div class="flex-between mb-3 mt-3">
+                    <h3>Visits</h3>
+                    <button class="btn" onclick="openModal('log-visit-modal')">Log New Visit</button>
+                </div>
+
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>BP (Sys/Dia)</th>
+                                <th>Hb (g/dL)</th>
+                                <th>Weight (kg)</th>
+                                <th>Risk Tier</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="preg-visits-body">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card mt-3">
+                    <h3>Trend Charts</h3>
+                    <div class="charts-grid">
+                        <div class="chart-container"><canvas id="bpChart"></canvas></div>
+                        <div class="chart-container"><canvas id="hbChart"></canvas></div>
+                        <div class="chart-container"><canvas id="weightChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Visit Detail Panel -->
+                <div id="visit-detail-panel" class="card mt-3 d-none">
+                    <h3>Visit Details</h3>
+                    <div id="visit-rule-alert" class="alert alert-danger d-none">
+                        ⚠️ <strong>Clinical Safety Rule Triggered:</strong> <span id="visit-rule-reason"></span>
+                    </div>
+                    
+                    <div class="flex-between mb-3">
+                        <div>
+                            <h4>Risk Assessment</h4>
+                            <p>ML Risk Score: <span id="visit-ml-score"></span>%</p>
+                        </div>
+                        <div>
+                            <span id="visit-detail-badge" class="badge badge-large"></span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <h4>SHAP Explanation (Risk Factors)</h4>
+                        <div class="shap-container">
+                            <canvas id="shapChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-small" onclick="closeVisitDetail()">Close Panel</button>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- Escalations View -->
+        <section id="escalations-view" class="view-section">
+            <h1 class="mb-3">Medical Officer Dashboard — Escalations</h1>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patient Name</th>
+                            <th>Date</th>
+                            <th>Trigger Reason</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="escalations-table-body">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+                <div id="escalations-empty" class="empty-state d-none">
+                    <span class="icon">✅</span>
+                    <p>No pending escalations</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modals -->
+    <div id="register-patient-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Register New Patient</h2>
+                <button class="close-btn" onclick="closeModal('register-patient-modal')">&times;</button>
+            </div>
+            <form id="register-patient-form">
+                <div class="form-group">
+                    <label>First Name *</label>
+                    <input type="text" name="first_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Last Name *</label>
+                    <input type="text" name="last_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Date of Birth *</label>
+                    <input type="date" name="date_of_birth" required>
+                </div>
+                <div class="form-group">
+                    <label>Village *</label>
+                    <input type="text" name="village" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="text" name="phone_number" required>
+                </div>
+                <div class="form-group">
+                    <label>ABHA ID (Optional)</label>
+                    <input type="text" name="abha_id">
+                </div>
+                <button type="submit" class="btn">Register</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="start-pregnancy-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Start New Pregnancy</h2>
+                <button class="close-btn" onclick="closeModal('start-pregnancy-modal')">&times;</button>
+            </div>
+            <form id="start-pregnancy-form">
+                <div class="form-group">
+                    <label>LMP Date *</label>
+                    <input type="date" name="lmp_date" required>
+                </div>
+                <div class="form-group">
+                    <label>Gravida (Number of pregnancies) *</label>
+                    <input type="number" name="gravida" required min="1">
+                </div>
+                <div class="form-group">
+                    <label>Parity (Number of births) *</label>
+                    <input type="number" name="parity" required min="0">
+                </div>
+                <button type="submit" class="btn">Start Pregnancy</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="log-visit-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Log New Visit</h2>
+                <button class="close-btn" onclick="closeModal('log-visit-modal')">&times;</button>
+            </div>
+            <form id="log-visit-form">
+                <div class="form-group">
+                    <label>Visit Date *</label>
+                    <input type="date" id="visit_date_input" name="visit_date" required>
+                </div>
+                <div class="form-group">
+                    <label>Systolic BP (mmHg) *</label>
+                    <input type="number" name="systolic_bp" required>
+                </div>
+                <div class="form-group">
+                    <label>Diastolic BP (mmHg) *</label>
+                    <input type="number" name="diastolic_bp" required>
+                </div>
+                <div class="form-group">
+                    <label>Weight (kg) *</label>
+                    <input type="number" name="weight" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label>Hemoglobin (g/dL) *</label>
+                    <input type="number" name="hemoglobin" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label>Blood Sugar (mg/dL) *</label>
+                    <input type="number" name="blood_sugar" required>
+                </div>
+                <div class="form-group">
+                    <label>Fundal Height (cm) *</label>
+                    <input type="number" name="fundal_height" required>
+                </div>
+                
+                <div class="form-group mt-3">
+                    <label>Symptoms</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item"><input type="checkbox" name="symptoms" value="swelling"> Swelling</label>
+                        <label class="checkbox-item"><input type="checkbox" name="symptoms" value="headache"> Headache</label>
+                        <label class="checkbox-item"><input type="checkbox" name="symptoms" value="severe_headache"> Severe Headache</label>
+                        <label class="checkbox-item"><input type="checkbox" name="symptoms" value="blurred_vision"> Blurred Vision</label>
+                        <label class="checkbox-item"><input type="checkbox" name="symptoms" value="vaginal_bleeding"> Vaginal Bleeding</label>
+                        <label class="checkbox-item"><input type="checkbox" name="symptoms" value="convulsions"> Convulsions</label>
+                        <label class="checkbox-item"><input type="checkbox" name="symptoms" value="unconsciousness"> Unconsciousness</label>
+                        <label class="checkbox-item"><input type="checkbox" name="symptoms" value="fever"> Fever</label>
+                        <label class="checkbox-item"><input type="checkbox" name="symptoms" value="reduced_fetal_movement"> Reduced Fetal Movement</label>
+                    </div>
+                </div>
+                <button type="submit" class="btn mt-3">Log Visit</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main JavaScript Logic -->
+    <script>
+        // State
+        let currentPatientId = null;
+        let currentPregnancyId = null;
+        let chartInstances = {};
+
+        // Mock fallback wrapper
+        async function api(url, method = 'GET', body = null) {
+            try {
+                const options = {
+                    method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                if (body) options.body = JSON.stringify(body);
+                const res = await fetch(url, options);
+                if (res.ok) return await res.json();
+                throw new Error('API failed');
+            } catch (e) {
+                console.warn(`Mocking API for ${method} ${url}`);
+                return mockApi(url, method, body);
+            }
+        }
+
+        // Utils
+        function getBadgeClass(tier) {
+            if (!tier) return 'badge-green';
+            if (tier.toUpperCase() === 'RED') return 'badge-red';
+            if (tier.toUpperCase() === 'YELLOW') return 'badge-yellow';
+            return 'badge-green';
+        }
+
+        function openModal(id) {
+            if (id === 'log-visit-modal') {
+                document.getElementById('visit_date_input').valueAsDate = new Date();
+            }
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                const viewId = e.target.getAttribute('data-view');
+                document.querySelectorAll('.view-section').forEach(view => view.classList.remove('active'));
+                document.getElementById(viewId).classList.add('active');
+
+                if (viewId === 'dashboard-view') loadDashboard();
+                if (viewId === 'patients-view') {
+                    showPatientStep('patient-list-step');
+                    loadPatients();
+                }
+                if (viewId === 'escalations-view') loadEscalations();
+            });
+        });
+
+        function showPatientStep(stepId) {
+            document.getElementById('patient-list-step').classList.add('d-none');
+            document.getElementById('patient-detail-step').classList.add('d-none');
+            document.getElementById('pregnancy-detail-step').classList.add('d-none');
+            document.getElementById(stepId).classList.remove('d-none');
+        }
+
+        function closeVisitDetail() {
+            document.getElementById('visit-detail-panel').classList.add('d-none');
+        }
+
+        // Data Loading
+        async function loadDashboard() {
+            const data = await api('/api/dashboard');
+            document.getElementById('dash-total-patients').textContent = data.total_patients;
+            document.getElementById('dash-active-pregnancies').textContent = data.active_pregnancies;
+            document.getElementById('dash-pending-escalations').textContent = data.pending_escalations;
+            
+            const tbody = document.getElementById('dash-recent-visits');
+            tbody.innerHTML = data.recent_visits.map(v => `
+                <tr>
+                    <td>${v.visit_date}</td>
+                    <td>${v.patient_name}</td>
+                    <td><span class="badge ${getBadgeClass(v.risk_tier)}">${v.risk_tier}</span></td>
+                    <td>${v.systolic_bp}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadPatients() {
+            const data = await api('/api/patients');
+            const tbody = document.getElementById('patients-table-body');
+            tbody.innerHTML = data.map(p => `
+                <tr>
+                    <td>${p.first_name} ${p.last_name}</td>
+                    <td>${p.village}</td>
+                    <td>${p.phone_number}</td>
+                    <td>${p.date_of_birth}</td>
+                    <td><button class="btn btn-small" onclick="viewPatient('${p.id}')">View</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function viewPatient(id) {
+            currentPatientId = id;
+            const data = await api(`/api/patients/${id}`);
+            
+            document.getElementById('pd-name').textContent = `${data.first_name} ${data.last_name}`;
+            showPatientStep('patient-detail-step');
+
+            const pregList = document.getElementById('pd-pregnancies-list');
+            if (data.pregnancies && data.pregnancies.length > 0) {
+                pregList.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>LMP Date</th>
+                                <th>EDD Date</th>
+                                <th>Status</th>
+                                <th>Risk Level</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.pregnancies.map(pr => `
+                                <tr class="clickable-row" onclick="viewPregnancy('${pr.id}')">
+                                    <td>${pr.lmp_date}</td>
+                                    <td>${pr.edd_date}</td>
+                                    <td>${pr.is_active ? 'Active' : 'Completed'}</td>
+                                    <td><span class="badge ${getBadgeClass(pr.risk_status)}">${pr.risk_status}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                pregList.innerHTML = '<p class="text-center mt-3">No pregnancies recorded.</p>';
+            }
+        }
+
+        async function viewPregnancy(id) {
+            currentPregnancyId = id;
+            showPatientStep('pregnancy-detail-step');
+            closeVisitDetail();
+            
+            const visits = await api(`/api/visits/${id}/trend`);
+            renderPregnancyVisits(visits);
+            renderTrendCharts(visits);
+        }
+
+        function renderPregnancyVisits(visits) {
+            const tbody = document.getElementById('preg-visits-body');
+            if (visits.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center">No visits logged yet.</td></tr>`;
+                return;
+            }
+            
+            // Set basic info based on most recent visit or defaults
+            const latest = visits[visits.length - 1];
+            document.getElementById('preg-risk-badge').className = `badge badge-large ${getBadgeClass(latest.risk_tier)}`;
+            document.getElementById('preg-risk-badge').textContent = latest.risk_tier;
+
+            tbody.innerHTML = visits.map((v, idx) => `
+                <tr class="clickable-row" onclick='showVisitDetail(${JSON.stringify(v)})'>
+                    <td>${v.visit_date}</td>
+                    <td>${v.systolic_bp} / ${v.diastolic_bp}</td>
+                    <td>${v.hemoglobin_g_dl}</td>
+                    <td>${v.weight_kg}</td>
+                    <td><span class="badge ${getBadgeClass(v.risk_tier)}">${v.risk_tier}</span></td>
+                    <td><button class="btn btn-small">Details</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function showVisitDetail(v) {
+            const panel = document.getElementById('visit-detail-panel');
+            panel.classList.remove('d-none');
+            
+            document.getElementById('visit-detail-badge').className = `badge badge-large ${getBadgeClass(v.risk_tier)}`;
+            document.getElementById('visit-detail-badge').textContent = v.risk_tier;
+            document.getElementById('visit-ml-score').textContent = Math.round((v.ml_risk_score || 0) * 100);
+            
+            const alertBox = document.getElementById('visit-rule-alert');
+            if (v.rule_triggered) {
+                alertBox.classList.remove('d-none');
+                let reason = v.rule_trigger_reason || 'Critical vital sign out of normal range';
+                if (Array.isArray(reason)) reason = reason.join('; ');
+                document.getElementById('visit-rule-reason').textContent = reason;
+            } else {
+                alertBox.classList.add('d-none');
+            }
+
+            let shapData = v.shap_explanations;
+            if (typeof shapData === 'string') {
+                try { shapData = JSON.parse(shapData); } catch(e) { shapData = {}; }
+            }
+            renderShapChart(shapData || {});
+        }
+
+        async function loadEscalations() {
+            const data = await api('/api/escalations');
+            const tbody = document.getElementById('escalations-table-body');
+            const empty = document.getElementById('escalations-empty');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '';
+                empty.classList.remove('d-none');
+            } else {
+                empty.classList.add('d-none');
+                tbody.innerHTML = data.map(e => `
+                    <tr>
+                        <td>${e.patient_name}</td>
+                        <td>${e.visit_date}</td>
+                        <td>${e.trigger_reason}</td>
+                        <td><span class="badge ${getBadgeClass(e.risk_tier)}">${e.status}</span></td>
+                        <td>
+                            ${e.status !== 'RESOLVED' ? `<button class="btn btn-small" onclick="resolveEscalation('${e.id}')">Resolve</button>` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        async function resolveEscalation(id) {
+            await api(`/api/escalations/${id}/resolve`, 'POST');
+            loadEscalations();
+        }
+
+        // Form Handlers
+        document.getElementById('register-patient-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = Object.fromEntries(new FormData(e.target));
+            await api('/api/patients', 'POST', formData);
+            closeModal('register-patient-modal');
+            e.target.reset();
+            if (document.getElementById('patients-view').classList.contains('active')) {
+                loadPatients();
+            }
+        });
+
+        document.getElementById('start-pregnancy-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = Object.fromEntries(new FormData(e.target));
+            formData.patient_id = currentPatientId;
+            await api('/api/pregnancies', 'POST', formData);
+            closeModal('start-pregnancy-modal');
+            e.target.reset();
+            viewPatient(currentPatientId);
+        });
+
+        document.getElementById('log-visit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const symptoms = Array.from(form.querySelectorAll('input[name="symptoms"]:checked')).map(cb => cb.value);
+            
+            const payload = {
+                pregnancy_id: currentPregnancyId,
+                visit_date: form.visit_date.value,
+                systolic_bp: parseInt(form.systolic_bp.value),
+                diastolic_bp: parseInt(form.diastolic_bp.value),
+                weight_kg: parseFloat(form.weight.value),
+                hemoglobin_g_dl: parseFloat(form.hemoglobin.value),
+                blood_sugar_mg_dl: parseInt(form.blood_sugar.value),
+                fundal_height_cm: parseFloat(form.fundal_height.value),
+                symptoms: symptoms
+            };
+            
+            const res = await api('/api/visits', 'POST', payload);
+            closeModal('log-visit-modal');
+            form.reset();
+            viewPregnancy(currentPregnancyId);
+            
+            // Show the visit detail for the newly created visit
+            if (res) {
+                const visit = res.visit || res;
+                // Parse shap_explanations if it's a string
+                if (typeof visit.shap_explanations === 'string') {
+                    try { visit.shap_explanations = JSON.parse(visit.shap_explanations); } catch(e) {}
+                }
+                if (typeof visit.rule_trigger_reason === 'string') {
+                    try {
+                        const parsed = JSON.parse(visit.rule_trigger_reason);
+                        if (Array.isArray(parsed)) visit.rule_trigger_reason = parsed.join('; ');
+                    } catch(e) {}
+                }
+                setTimeout(() => showVisitDetail(visit), 500);
+            }
+        });
+
+        // Charts
+        function renderTrendCharts(visits) {
+            const labels = visits.map(v => v.visit_date);
+            const sysBp = visits.map(v => v.systolic_bp);
+            const diaBp = visits.map(v => v.diastolic_bp);
+            const hb = visits.map(v => v.hemoglobin_g_dl);
+            const weight = visits.map(v => v.weight_kg);
+
+            createLineChart('bpChart', 'Blood Pressure (mmHg)', labels, [
+                { label: 'Systolic', data: sysBp, borderColor: '#c62828', backgroundColor: '#c62828' },
+                { label: 'Diastolic', data: diaBp, borderColor: '#1a73a7', backgroundColor: '#1a73a7' }
+            ]);
+
+            createLineChart('hbChart', 'Hemoglobin (g/dL)', labels, [
+                { label: 'Hb', data: hb, borderColor: '#2e7d32', backgroundColor: '#2e7d32' }
+            ]);
+
+            createLineChart('weightChart', 'Weight (kg)', labels, [
+                { label: 'Weight', data: weight, borderColor: '#f9a825', backgroundColor: '#f9a825' }
+            ]);
+        }
+
+        function createLineChart(canvasId, title, labels, datasets) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            if (chartInstances[canvasId]) {
+                chartInstances[canvasId].destroy();
+            }
+            
+            chartInstances[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: title }
+                    },
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+        }
+
+        function renderShapChart(shapValues) {
+            if (!shapValues) return;
+            
+            const ctx = document.getElementById('shapChart').getContext('2d');
+            if (chartInstances['shapChart']) {
+                chartInstances['shapChart'].destroy();
+            }
+
+            const entries = Object.entries(shapValues).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+            const labels = entries.map(e => e[0]);
+            const data = entries.map(e => e[1]);
+            const colors = data.map(v => v > 0 ? 'rgba(198, 40, 40, 0.7)' : 'rgba(46, 125, 50, 0.7)');
+
+            chartInstances['shapChart'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Impact on Risk Score',
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'SHAP Value' } }
+                    }
+                }
+            });
+        }
+
+        // Mock API implementation for showcase
+        function mockApi(url, method, body) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    if (url.includes('/dashboard')) {
+                        resolve({
+                            total_patients: 142, active_pregnancies: 38, pending_escalations: 2,
+                            recent_visits: [
+                                { visit_date: '2023-10-25', patient_name: 'Meera Devi', risk_tier: 'RED', systolic_bp: 160 },
+                                { visit_date: '2023-10-24', patient_name: 'Sunita Sharma', risk_tier: 'GREEN', systolic_bp: 120 }
+                            ]
+                        });
+                    } else if (url.includes('/patients') && method === 'GET' && !url.includes('/patients/')) {
+                        resolve([
+                            { id: '1', first_name: 'Meera', last_name: 'Devi', village: 'Rampur', phone_number: '9876543210', date_of_birth: '1995-04-12' },
+                            { id: '2', first_name: 'Sunita', last_name: 'Sharma', village: 'Shantinagar', phone_number: '8765432109', date_of_birth: '1998-11-23' }
+                        ]);
+                    } else if (url.includes('/patients/')) {
+                        resolve({
+                            id: '1', first_name: 'Meera', last_name: 'Devi',
+                            pregnancies: [{ id: 'p1', lmp_date: '2023-04-01', edd_date: '2024-01-06', risk_status: 'RED', is_active: 1 }]
+                        });
+                    } else if (url.includes('/visits') && method === 'POST') {
+                        resolve({
+                            visit: {
+                                id: 'v_new', risk_tier: 'RED', ml_risk_score: 0.85,
+                                shap_explanations: { "Blood Pressure (Systolic)": 0.31, "Hemoglobin": -0.05, "Weight": 0.1 },
+                                rule_triggered: 1, rule_trigger_reason: "Hypertension: BP " + (body.systolic_bp || 160) + "/" + (body.diastolic_bp || 95) + " mmHg"
+                            }
+                        });
+                    } else if (url.includes('/trend')) {
+                        resolve([
+                            { visit_date: '2023-06-15', systolic_bp: 120, diastolic_bp: 78, weight_kg: 55, hemoglobin_g_dl: 11.2, risk_tier: 'GREEN', ml_risk_score: 0.12, shap_explanations: {"Blood Pressure": 0.01}, rule_triggered: 0 },
+                            { visit_date: '2023-08-20', systolic_bp: 140, diastolic_bp: 90, weight_kg: 58, hemoglobin_g_dl: 10.5, risk_tier: 'YELLOW', ml_risk_score: 0.45, shap_explanations: {"Blood Pressure": 0.15}, rule_triggered: 0 },
+                            { visit_date: '2023-10-25', systolic_bp: 160, diastolic_bp: 95, weight_kg: 62, hemoglobin_g_dl: 9.8, risk_tier: 'RED', ml_risk_score: 0.85, shap_explanations: {"Blood Pressure (Systolic)": 0.31, "Hemoglobin": 0.12}, rule_triggered: 1, rule_trigger_reason: "Hypertension" }
+                        ]);
+                    } else if (url.includes('/escalations') && method === 'GET') {
+                        resolve([
+                            { id: 'e1', patient_name: 'Meera Devi', visit_date: '2023-10-25', trigger_reason: 'Hypertension: BP 160/95 mmHg', status: 'PENDING', risk_tier: 'RED' }
+                        ]);
+                    } else if (url.includes('/resolve')) {
+                        resolve({ success: true });
+                    } else {
+                        resolve({ success: true, id: 'new_id' }); // Generic response for creates
+                    }
+                }, 300); // simulate network delay
+            });
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+        });
+
+    </script>
+</body>
+</html>
